@@ -1,0 +1,57 @@
+name: CI/CD Pipeline for Flask App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
+        ports:
+          - 5000:5000
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Step 3: Log in to DockerHub (if you need to push to DockerHub)
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Step 4: Build and run Docker Compose
+      - name: Build and run Docker Compose
+        run: |
+          docker-compose -f docker-compose.yml up --build -d
+
+      # Step 5: Test if the application is running
+      - name: Check if app is running
+        run: |
+          curl --silent --fail http://localhost:5000/ || exit 1
+
+      # Step 6: Push Docker image to DockerHub (optional)
+      - name: Push Docker image
+        run: |
+          docker tag backend-flask_flask-app:latest ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
+
+      # Step 7: Clean up (Stop and remove containers)
+      - name: Clean up
+        run: |
+          docker-compose down
