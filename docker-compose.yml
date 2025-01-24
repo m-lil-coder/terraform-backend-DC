@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: ./app
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_RUN_HOST=0.0.0.0
+    volumes:
+      - ./app:/app  # Mount the local app directory to container's /app
+    restart: always  # Restart the container automatically in case of failure
+
+  # You can add more services, like databases, here if needed
+
+
